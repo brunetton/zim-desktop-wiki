@@ -390,8 +390,25 @@ class ParseTreeItem(ClipboardItem):
 		self.format = format
 
 	def set(self, clipboard, clear_func):
-		clipboard.set_with_data(self.targets, self._get, clear_func, self) \
-			or logger.warn('Failed to set data on clipboard')
+		import warnings
+		max_tries = 3
+		i = 0
+		with warnings.catch_warnings():
+			warnings.simplefilter('error')
+			while True:
+				try:
+					clipboard.set_with_data(self.targets, self._get, clear_func, self) \
+						or logger.warn('Failed to set data on clipboard')
+				except:
+					if i < max_tries:
+						i += 1
+						logger.exception('Got exception, try again')
+						continue
+					else:
+						raise
+				else:
+					break
+
 
 	def _get(self, clipboard, selectiondata, id, *a):
 		'''Callback to get the data in a specific format
